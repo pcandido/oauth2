@@ -1,16 +1,35 @@
 package handlers
 
-import "net/http"
+import (
+	"authorization-server/store"
+	"fmt"
+	"net/http"
+	"slices"
+)
 
 func AuthorizeHandler(w http.ResponseWriter, r *http.Request) {
-	if r.URL.Query().Get("response_type") != "code" {
-		//TODO handle token response_type
+	clientID := r.URL.Query().Get("client_id")
+	redirectURI := r.URL.Query().Get("redirect_uri")
+	responseType := r.URL.Query().Get("response_type")
+
+	client, err := store.GetClient(clientID)
+	if err != nil {
+		http.Error(w, "Client not found", http.StatusBadRequest) //TODO transformar as validações em redirect com erro
+		return
+	}
+
+	if !slices.Contains(client.RedirectURIs, redirectURI) {
+		http.Error(w, "Invalid redirect_uri", http.StatusBadRequest)
+		return
+	}
+
+	if !slices.Contains(client.ResponseTypes, responseType) {
 		http.Error(w, "Invalid response_type", http.StatusBadRequest)
 		return
 	}
 
-	redirect := r.URL.Query().Get("redirect_uri")
+	//TODO validar scope
 
-	w.Header().Set("Location", redirect+"?code=example-code")
+	w.Header().Set("Location", fmt.Sprintf("%s?code=example-code&state=%s", redirectURI, r.URL.Query().Get("state")))
 	w.WriteHeader(http.StatusTemporaryRedirect)
 }

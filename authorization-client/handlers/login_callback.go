@@ -20,6 +20,8 @@ func LoginCallbackHandler(w http.ResponseWriter, r *http.Request) {
 	}
 	defer res.Body.Close()
 
+	//TODO validar state
+
 	if res.StatusCode != http.StatusOK {
 		http.Error(w, "Error getting token", res.StatusCode)
 		return
