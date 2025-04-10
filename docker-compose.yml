@@ -1,0 +1,23 @@
+networks:
+  default:
+
+services:
+  authorization-server:
+    build: ./authorization-server
+    environment:
+      - PORT=8081
+    ports:
+      - 8081:8081
+    networks:
+      - default
+
+  authorization-client:
+    build: ./authorization-client
+    environment:
+      - PORT=8080
+      - AUTHORIZATION_SERVER_HOST_BE=authorization-server:8081
+      - AUTHORIZATION_SERVER_HOST_FE=localhost:8081
+    ports:
+      - 8080:8080
+    networks:
+      - default
