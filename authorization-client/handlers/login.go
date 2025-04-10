@@ -16,7 +16,7 @@ func LoginHandler(w http.ResponseWriter, r *http.Request) {
 						<title>Login</title>
 						</head>
 						<body>
-						<a href="%s?response_type=code&client_id=%s&redirect_uri=%s&scope=read,write&state=random_state">Fazer login externo</a>
+						<a href="%s?response_type=code&client_id=%s&redirect_uri=%s&scope=read write&state=random_state">Fazer login externo</a>
 						</body>
 						</html>`,
 		config.AuthorizationServerUrl("authorize", false),

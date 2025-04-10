@@ -8,7 +8,7 @@ type Client struct {
 	RedirectURIs         []string
 	GrantTypes           []string
 	ResponseTypes        []string
-	Scope                string
+	Scopes               []string
 	AccessTokenLifetime  int
 	RefreshTokenLifetime int
 }
@@ -20,7 +20,7 @@ var clients = map[string]Client{
 		RedirectURIs:         []string{"http://localhost:8080/callback"},
 		GrantTypes:           []string{"authorization_code"},
 		ResponseTypes:        []string{"code"},
-		Scope:                "read,write",
+		Scopes:               []string{"read", "write"},
 		AccessTokenLifetime:  3600,
 		RefreshTokenLifetime: 7200,
 	},
