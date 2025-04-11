@@ -7,21 +7,14 @@ import (
 )
 
 func LoginHandler(w http.ResponseWriter, r *http.Request) {
-	html := fmt.Sprintf(`
-						<!DOCTYPE html>
-						<html lang="en">
-						<head>
-						<meta charset="UTF-8">
-						<meta name="viewport" content="width=device-width, initial-scale=1.0">
-						<title>Login</title>
-						</head>
-						<body>
-						<a href="%s?response_type=code&client_id=%s&redirect_uri=%s&scope=read write&state=random_state">Fazer login externo</a>
-						</body>
-						</html>`,
+	html := fmt.Sprintf(
+		`<a href="%s?response_type=%s&client_id=%s&redirect_uri=%s&scope=%s&state=%s">Fazer login com Authorization Server</a>`,
 		config.AuthorizationServerUrl("authorize", false),
+		"code",
 		config.ClientID(),
 		config.Url("callback"),
+		"read write",
+		"random_state",
 	)
 
 	w.Header().Set("Content-Type", "text/html")
