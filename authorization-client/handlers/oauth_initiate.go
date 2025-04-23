@@ -6,21 +6,23 @@ import (
 	"encoding/hex"
 	"net/http"
 	"net/url"
+	"time"
 )
 
-func StartOauthHandler(w http.ResponseWriter, r *http.Request) {
+func OAuthInitiateHandler(w http.ResponseWriter, r *http.Request) {
 	state := generateRandomString(16)
 
 	query := url.Values{}
 	query.Add("response_type", "code")
 	query.Add("client_id", config.ClientID())
-	query.Add("redirect_uri", config.Url("callback"))
+	query.Add("redirect_uri", config.Url("login/callback"))
 	query.Add("scope", "read write")
 	query.Add("state", state)
 
 	http.SetCookie(w, &http.Cookie{
-		Name:  "oauth_state",
-		Value: state,
+		Name:   "oauth_state",
+		Value:  state,
+		MaxAge: int((5 * time.Minute).Seconds()),
 		// use Secure and HttpOnly flags for production
 	})
 

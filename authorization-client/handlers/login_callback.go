@@ -12,10 +12,6 @@ func LoginCallbackHandler(w http.ResponseWriter, r *http.Request) {
 	code := r.URL.Query().Get("code")
 	receivedState := r.URL.Query().Get("state")
 
-	for _, cookie := range r.Cookies() {
-		fmt.Printf("Cookie: %s = %s\n", cookie.Name, cookie.Value)
-	}
-
 	sentState, err := r.Cookie("oauth_state")
 	if err != nil {
 		http.Error(w, "State cookie not found", http.StatusBadRequest)
@@ -26,6 +22,13 @@ func LoginCallbackHandler(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, "Invalid state", http.StatusUnauthorized)
 		return
 	}
+
+	http.SetCookie(w, &http.Cookie{
+		Name:  "oauth_state",
+		Value: "",
+		MaxAge: -1,
+		// For production, set Secure and HttpOnly
+	})
 
 	// OK to continue
 	body := fmt.Sprintf(`{"code": "%s"}`, code)
@@ -63,12 +66,14 @@ func LoginCallbackHandler(w http.ResponseWriter, r *http.Request) {
 	http.SetCookie(w, &http.Cookie{
 		Name:  "access_token",
 		Value: accessToken,
+		Path:  "/",
 		// For production, set Secure and HttpOnly
 	})
 
 	http.SetCookie(w, &http.Cookie{
 		Name:  "refresh_token",
 		Value: refreshToken,
+		Path:  "/",
 		// For production, set Secure and HttpOnly
 	})
 

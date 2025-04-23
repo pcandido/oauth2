@@ -13,6 +13,9 @@ func IndexHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	//TODO validate token
+	//TODO get user info
+
 	w.Header().Set("Content-Type", "text/html")
 	w.WriteHeader(http.StatusOK)
 	w.Write([]byte(fmt.Sprintf(`Hello, World! <a href="%s">Sair</a>`, config.Url("logout"))))
