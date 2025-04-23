@@ -29,7 +29,7 @@ func redirectUrl(state string) string {
 
 func stateCookie(state string) *http.Cookie {
 	return &http.Cookie{
-		Name:   "oauth_state",
+		Name:   config.OAUTH_STATE_COOKIE_NAME,
 		Value:  state,
 		MaxAge: int((5 * time.Minute).Seconds()),
 	}

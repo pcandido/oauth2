@@ -8,75 +8,85 @@ import (
 	"strings"
 )
 
+type Tokens struct {
+	AccessToken  string `json:"access_token"`
+	RefreshToken string `json:"refresh_token"`
+}
+
 func LoginCallbackHandler(w http.ResponseWriter, r *http.Request) {
-	code := r.URL.Query().Get("code")
-	receivedState := r.URL.Query().Get("state")
+	if err := validateState(r); err != nil {
+		http.Error(w, err.Error(), http.StatusUnauthorized)
+		return
+	}
+	deleteStateCookie(w)
 
-	sentState, err := r.Cookie("oauth_state")
+	tokens, err := getTokensFromCode(r.URL.Query().Get("code"))
 	if err != nil {
-		http.Error(w, "State cookie not found", http.StatusBadRequest)
+		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
 	}
+	writeTokenCookies(w, tokens)
 
-	if receivedState != sentState.Value {
-		http.Error(w, "Invalid state", http.StatusUnauthorized)
-		return
+	w.Header().Set("Location", config.Url(""))
+	w.WriteHeader(http.StatusTemporaryRedirect)
+}
+
+func validateState(r *http.Request) error {
+	cookie, err := r.Cookie(config.OAUTH_STATE_COOKIE_NAME)
+	if err != nil {
+		return fmt.Errorf("state cookie not found: %v", err)
 	}
 
+	if cookie.Value != r.URL.Query().Get("state") {
+		return fmt.Errorf("invalid state")
+	}
+
+	return nil
+}
+
+func deleteStateCookie(w http.ResponseWriter) {
 	http.SetCookie(w, &http.Cookie{
-		Name:  "oauth_state",
-		Value: "",
+		Name:   config.OAUTH_STATE_COOKIE_NAME,
+		Value:  "",
 		MaxAge: -1,
-		// For production, set Secure and HttpOnly
 	})
+}
 
-	// OK to continue
+func getTokensFromCode(code string) (*Tokens, error) {
 	body := fmt.Sprintf(`{"code": "%s"}`, code)
-	res, err := http.Post(config.AuthorizationServerUrl("token", true, nil), "application/json", strings.NewReader(body))
+	tokenUrl := config.AuthorizationServerUrl("token", true, nil)
+
+	res, err := http.Post(tokenUrl, "application/json", strings.NewReader(body))
 	if err != nil {
-		fmt.Printf("Error getting token: %s\n", err)
-		http.Error(w, "Error getting token", http.StatusInternalServerError)
-		return
+		return nil, fmt.Errorf("error getting token: %s", err)
 	}
-	defer res.Body.Close()
 
 	if res.StatusCode != http.StatusOK {
-		http.Error(w, "Error getting token", res.StatusCode)
-		return
+		return nil, fmt.Errorf("error getting token: %d", res.StatusCode)
 	}
 
-	var responseBody map[string]interface{}
-	if err := json.NewDecoder(res.Body).Decode(&responseBody); err != nil {
-		http.Error(w, "Error parsing token response", http.StatusInternalServerError)
-		return
+	defer res.Body.Close()
+
+	var tokens Tokens
+	if err := json.NewDecoder(res.Body).Decode(&tokens); err != nil {
+		return nil, fmt.Errorf("error parsing token response")
 	}
 
-	accessToken, ok := responseBody["access_token"].(string)
-	if !ok {
-		http.Error(w, "Access token not found in response", http.StatusInternalServerError)
-		return
-	}
+	return &tokens, nil
+}
 
-	refreshToken, ok := responseBody["refresh_token"].(string)
-	if !ok {
-		http.Error(w, "Refresh token not found in response", http.StatusInternalServerError)
-		return
-	}
-
+func writeTokenCookies(w http.ResponseWriter, tokens *Tokens) {
 	http.SetCookie(w, &http.Cookie{
 		Name:  "access_token",
-		Value: accessToken,
+		Value: tokens.AccessToken,
 		Path:  "/",
 		// For production, set Secure and HttpOnly
 	})
 
 	http.SetCookie(w, &http.Cookie{
 		Name:  "refresh_token",
-		Value: refreshToken,
+		Value: tokens.RefreshToken,
 		Path:  "/",
 		// For production, set Secure and HttpOnly
 	})
-
-	w.Header().Set("Location", config.Url(""))
-	w.WriteHeader(http.StatusTemporaryRedirect)
 }
