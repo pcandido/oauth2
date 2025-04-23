@@ -29,7 +29,7 @@ func LoginCallbackHandler(w http.ResponseWriter, r *http.Request) {
 
 	// OK to continue
 	body := fmt.Sprintf(`{"code": "%s"}`, code)
-	res, err := http.Post(config.AuthorizationServerUrl("token", true), "application/json", strings.NewReader(body))
+	res, err := http.Post(config.AuthorizationServerUrl("token", true, nil), "application/json", strings.NewReader(body))
 	if err != nil {
 		fmt.Printf("Error getting token: %s\n", err)
 		http.Error(w, "Error getting token", http.StatusInternalServerError)

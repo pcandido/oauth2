@@ -4,24 +4,19 @@ import (
 	"authorization-client/config"
 	"crypto/rand"
 	"encoding/hex"
-	"fmt"
 	"net/http"
+	"net/url"
 )
 
 func StartOauthHandler(w http.ResponseWriter, r *http.Request) {
 	state := generateRandomString(16)
 
-	redirectUrl := fmt.Sprintf(
-		`%s?response_type=%s&client_id=%s&redirect_uri=%s&scope=%s&state=%s`,
-		config.AuthorizationServerUrl("authorize", false),
-		"code",
-		config.ClientID(),
-		config.Url("callback"),
-		"read write",
-		state,
-	)
-
-	fmt.Println(state)
+	query := url.Values{}
+	query.Add("response_type", "code")
+	query.Add("client_id", config.ClientID())
+	query.Add("redirect_uri", config.Url("callback"))
+	query.Add("scope", "read write")
+	query.Add("state", state)
 
 	http.SetCookie(w, &http.Cookie{
 		Name:  "oauth_state",
@@ -29,7 +24,7 @@ func StartOauthHandler(w http.ResponseWriter, r *http.Request) {
 		// use Secure and HttpOnly flags for production
 	})
 
-	http.Redirect(w, r, redirectUrl, http.StatusTemporaryRedirect)
+	http.Redirect(w, r, config.AuthorizationServerUrl("authorize", true, &query), http.StatusTemporaryRedirect)
 }
 
 func generateRandomString(length int) string {
