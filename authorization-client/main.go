@@ -10,6 +10,7 @@ import (
 func main() {
 	http.HandleFunc("/", handlers.IndexHandler)
 	http.HandleFunc("/login", handlers.LoginHandler)
+	http.HandleFunc("/start-oauth", handlers.StartOauthHandler)
 	http.HandleFunc("/logout", handlers.LogoutHandler)
 	http.HandleFunc("/callback", handlers.LoginCallbackHandler)
 

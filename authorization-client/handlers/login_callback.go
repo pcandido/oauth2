@@ -10,7 +10,24 @@ import (
 
 func LoginCallbackHandler(w http.ResponseWriter, r *http.Request) {
 	code := r.URL.Query().Get("code")
+	receivedState := r.URL.Query().Get("state")
 
+	for _, cookie := range r.Cookies() {
+		fmt.Printf("Cookie: %s = %s\n", cookie.Name, cookie.Value)
+	}
+
+	sentState, err := r.Cookie("oauth_state")
+	if err != nil {
+		http.Error(w, "State cookie not found", http.StatusBadRequest)
+		return
+	}
+
+	if receivedState != sentState.Value {
+		http.Error(w, "Invalid state", http.StatusUnauthorized)
+		return
+	}
+
+	// OK to continue
 	body := fmt.Sprintf(`{"code": "%s"}`, code)
 	res, err := http.Post(config.AuthorizationServerUrl("token", true), "application/json", strings.NewReader(body))
 	if err != nil {
@@ -19,8 +36,6 @@ func LoginCallbackHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	defer res.Body.Close()
-
-	//TODO validar state
 
 	if res.StatusCode != http.StatusOK {
 		http.Error(w, "Error getting token", res.StatusCode)
