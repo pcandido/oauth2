@@ -9,7 +9,7 @@ import (
 	"time"
 )
 
-func OAuthInitiateHandler(w http.ResponseWriter, r *http.Request) {
+func LoginInitiateHandler(w http.ResponseWriter, r *http.Request) {
 	state := generateRandomString(16)
 
 	query := url.Values{}
