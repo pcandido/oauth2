@@ -39,7 +39,7 @@ func generateRandomState(length int) string {
 	bytes := make([]byte, length)
 	_, err := rand.Read(bytes)
 	if err != nil {
-		panic(err) // Handle error appropriately in a real application
+		panic(err)
 	}
 	return hex.EncodeToString(bytes)
 }
