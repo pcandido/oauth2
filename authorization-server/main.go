@@ -10,6 +10,7 @@ import (
 func main() {
 	http.HandleFunc("/authorize", handlers.AuthorizeHandler)
 	http.HandleFunc("/token", handlers.TokenHandler)
+	http.HandleFunc("/login", handlers.LoginHandler)
 	// http.HandleFunc("/revoke", revokeHandler)
 	// http.HandleFunc("/introspect", introspectHandler)
 	// http.HandleFunc("/.well-known/jwks.json", jwksHandler)
