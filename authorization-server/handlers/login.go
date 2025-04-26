@@ -26,7 +26,7 @@ func LoginHandler(w http.ResponseWriter, r *http.Request) {
 func loginForm(w http.ResponseWriter, r *http.Request) {
 	authorizeParams := AuthorizeParamsFromQuery(r)
 
-	html := fmt.Sprintf(`
+	htmlResponse := fmt.Sprintf(`
 			<form method="POST" action="/login">
 				<input type="hidden" name="client_id" value="%s">
 				<input type="hidden" name="redirect_uri" value="%s">
@@ -48,9 +48,13 @@ func loginForm(w http.ResponseWriter, r *http.Request) {
 		html.EscapeString(authorizeParams.State),
 	)
 
+	if authorizeParams.Error != "" {
+		htmlResponse += fmt.Sprintf("<p style='color:red;'>%s</p>", html.EscapeString(authorizeParams.Error))
+	}
+
 	w.Header().Set("Content-Type", "text/html")
 	w.WriteHeader(http.StatusOK)
-	w.Write([]byte(html))
+	w.Write([]byte(htmlResponse))
 }
 
 func login(w http.ResponseWriter, r *http.Request) {
@@ -64,11 +68,11 @@ func login(w http.ResponseWriter, r *http.Request) {
 		authorizeParams.Error = "invalid_credentials"
 
 		url := url.URL{
-			Path:     "/authorize",
+			Path:     "/login",
 			RawQuery: authorizeParams.toQuery().Encode(),
 		}
 
-		http.Redirect(w, r, url.String(), http.StatusTemporaryRedirect)
+		http.Redirect(w, r, url.String(), http.StatusFound)
 		return
 	}
 
