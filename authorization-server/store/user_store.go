@@ -8,20 +8,30 @@ type User struct {
 	password string
 }
 
-var users = map[string]User{
-	"user@domain.com": {
+var users = []User{
+	{
 		ID:       "123",
 		Email:    "user@domain.com",
 		password: "123",
 	},
 }
 
-func GetUser(email string) (*User, error) {
-	user, exists := users[email]
-	if !exists {
-		return nil, fmt.Errorf("user not found")
+func GetUserByEmail(email string) (*User, error) {
+	for _, user := range users {
+		if user.Email == email {
+			return &user, nil
+		}
 	}
-	return &user, nil
+	return nil, fmt.Errorf("user not found")
+}
+
+func GetUserById(id string) (*User, error) {
+	for _, user := range users {
+		if user.ID == id {
+			return &user, nil
+		}
+	}
+	return nil, fmt.Errorf("user not found")
 }
 
 func (u *User) ValidatePassword(password string) bool {

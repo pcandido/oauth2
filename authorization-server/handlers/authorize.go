@@ -35,7 +35,7 @@ func AuthorizeHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	code := store.GenerateCode(userId)
+	code := store.GenerateCode(userId, authorizeParams.ClientID, authorizeParams.RedirectURI, authorizeParams.Scope)
 
 	callbackQuery := url.Values{}
 	callbackQuery.Set("code", code)

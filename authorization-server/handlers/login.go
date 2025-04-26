@@ -63,7 +63,7 @@ func login(w http.ResponseWriter, r *http.Request) {
 	email := r.FormValue("email")
 	password := r.FormValue("password")
 
-	user, err := store.GetUser(email)
+	user, err := store.GetUserByEmail(email)
 	if err != nil || !user.ValidatePassword(password) {
 		authorizeParams.Error = "invalid_credentials"
 
@@ -76,7 +76,7 @@ func login(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	token, err := token.Generate(map[string]string{"user": user.ID}, 15*time.Minute)
+	token, err := token.Generate(map[string]any{"user": user.ID}, 15*time.Minute)
 	if err != nil {
 		authorizeParams.Error = "server_error"
 		url := url.URL{
