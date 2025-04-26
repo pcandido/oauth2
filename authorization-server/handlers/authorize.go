@@ -24,7 +24,8 @@ func AuthorizeHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	if !logedIn(r) {
+	userId, loggedIn := getUser(r)
+	if !loggedIn {
 		loginUrl := url.URL{
 			Path:     "/login",
 			RawQuery: authorizeParams.toQuery().Encode(),
@@ -34,9 +35,10 @@ func AuthorizeHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	code := store.GenerateCode(userId)
+
 	callbackQuery := url.Values{}
-	callbackQuery.Set("code", "example-code")
-	//TODO generate a real code
+	callbackQuery.Set("code", code)
 	callbackQuery.Set("state", authorizeParams.State)
 
 	callbackUrl, err := url.Parse(authorizeParams.RedirectURI)
@@ -49,15 +51,21 @@ func AuthorizeHandler(w http.ResponseWriter, r *http.Request) {
 	http.Redirect(w, r, callbackUrl.String(), http.StatusTemporaryRedirect)
 }
 
-func logedIn(r *http.Request) bool {
+func getUser(r *http.Request) (string, bool) {
 	cookie, err := r.Cookie(config.ACCESS_TOKEN_COOKIE_NAME)
 	if err != nil || cookie.Value == "" {
-		return false
+		return "", false
 	}
 
-	_, err = token.Validate(cookie.Value)
-
-	return err == nil
+	claims, err := token.Validate(cookie.Value)
+	if err != nil {
+		return "", false
+	}
+	userId, ok := claims["user"].(string)
+	if !ok {
+		return "", false
+	}
+	return userId, true
 }
 
 func validateClient(authorizeParams *AuthorizeParams) error {
