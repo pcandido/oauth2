@@ -19,7 +19,7 @@ func LoginInitiateHandler(w http.ResponseWriter, r *http.Request) {
 func redirectUrl(state string) string {
 	query := url.Values{}
 	query.Add("response_type", "code")
-	query.Add("client_id", config.ClientID())
+	query.Add("client_id", config.CLIENT_ID)
 	query.Add("redirect_uri", config.Url("login/callback"))
 	query.Add("scope", "read write")
 	query.Add("state", state)

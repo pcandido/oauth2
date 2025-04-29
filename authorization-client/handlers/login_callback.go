@@ -57,8 +57,8 @@ func getTokensFromCode(code string) (*Tokens, error) {
 		"grant_type=authorization_code&code=%s&redirect_uri=%s&client_id=%s&client_secret=%s",
 		code,
 		config.Url("login/callback"),
-		config.ClientID(),
-		config.ClientSecret(),
+		config.CLIENT_ID,
+		config.CLIENT_SECRET,
 	)
 
 	tokenUrl := config.AuthorizationServerUrl("token", false, nil)

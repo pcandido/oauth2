@@ -15,8 +15,8 @@ type Client struct {
 
 var clients = map[string]Client{
 	"client_id_1": {
-		ClientID:             "client_id_1",
-		ClientSecret:         "client_secret_1",
+		ClientID:             "client_id",
+		ClientSecret:         "client_secret",
 		RedirectURIs:         []string{"http://localhost:8080/login/callback"},
 		GrantTypes:           []string{"authorization_code"},
 		ResponseTypes:        []string{"code"},

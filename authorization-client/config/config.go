@@ -25,14 +25,6 @@ func AuthorizationServerUrl(path string, backend bool, queryParams *url.Values) 
 	return url.String()
 }
 
-func ClientID() string {
-	return os.Getenv("CLIENT_ID")
-}
-
-func ClientSecret() string {
-	return os.Getenv("CLIENT_SECRET")
-}
-
 func Url(path string) string {
 	return fmt.Sprintf("http://localhost:%s/%s", Port(), path)
 }
