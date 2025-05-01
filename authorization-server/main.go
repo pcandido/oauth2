@@ -1,11 +1,11 @@
 package main
 
 import (
+	"authorization-server/config"
 	"authorization-server/handlers"
 	"fmt"
 	"log"
 	"net/http"
-	"os"
 )
 
 func main() {
@@ -13,7 +13,7 @@ func main() {
 	http.HandleFunc("/token", handlers.TokenHandler)
 	http.HandleFunc("/login", handlers.LoginHandler)
 
-	port := os.Getenv("PORT")
+	port := config.Port()
 
 	log.Printf("Authorization Server running on port %s", port)
 	http.ListenAndServe(fmt.Sprintf(":%s", port), nil)

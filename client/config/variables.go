@@ -30,3 +30,7 @@ func AuthServerHostForBackend() string {
 func AuthServerHostForFrontend() string {
 	return os.Getenv("AUTHORIZATION_SERVER_HOST_FE")
 }
+
+func ResourceServerHost() string {
+	return os.Getenv("RESOURCE_SERVER_HOST")
+}
