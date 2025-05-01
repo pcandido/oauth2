@@ -5,6 +5,7 @@ import "fmt"
 type Client struct {
 	ClientID             string
 	ClientSecret         string
+	ClientName           string
 	RedirectURIs         []string
 	GrantTypes           []string
 	ResponseTypes        []string
@@ -17,6 +18,7 @@ var clients = []Client{
 	{
 		ClientID:             "client_id",
 		ClientSecret:         "client_secret",
+		ClientName:           "Client",
 		RedirectURIs:         []string{"http://localhost:8080/auth_server/callback"},
 		GrantTypes:           []string{"authorization_code"},
 		ResponseTypes:        []string{"code"},

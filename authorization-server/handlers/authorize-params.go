@@ -6,12 +6,14 @@ import (
 )
 
 type AuthorizeParams struct {
+	ClientName   string
 	ClientID     string
 	RedirectURI  string
 	ResponseType string
 	Scope        string
 	State        string
 	Error        string
+	ConsentToken string
 }
 
 func AuthorizeParamsFromQuery(r *http.Request) *AuthorizeParams {
@@ -22,6 +24,7 @@ func AuthorizeParamsFromQuery(r *http.Request) *AuthorizeParams {
 		Scope:        r.URL.Query().Get("scope"),
 		State:        r.URL.Query().Get("state"),
 		Error:        r.URL.Query().Get("error"),
+		ConsentToken: r.URL.Query().Get("consent_token"),
 	}
 }
 
@@ -33,6 +36,7 @@ func AuthorizeParamsFromForm(r *http.Request) *AuthorizeParams {
 		Scope:        r.FormValue("scope"),
 		State:        r.FormValue("state"),
 		Error:        r.FormValue("error"),
+		ConsentToken: r.FormValue("consent_token"),
 	}
 }
 
@@ -43,6 +47,13 @@ func (params *AuthorizeParams) toQuery() url.Values {
 	query.Set("response_type", params.ResponseType)
 	query.Set("scope", params.Scope)
 	query.Set("state", params.State)
-	query.Set("error", params.Error)
+
+	if params.Error != "" {
+		query.Set("error", params.Error)
+	}
+	if params.ConsentToken != "" {
+		query.Set("consent_token", params.ConsentToken)
+	}
+
 	return query
 }

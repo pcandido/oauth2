@@ -48,6 +48,48 @@ func AuthorizeHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	if authorizeParams.ConsentToken == "" {
+		consentUrl := url.URL{
+			Path:     "/consent",
+			RawQuery: authorizeParams.toQuery().Encode(),
+		}
+
+		http.Redirect(w, r, consentUrl.String(), http.StatusTemporaryRedirect)
+		return
+	}
+
+	consentClaims, err := token.Validate(authorizeParams.ConsentToken)
+	if err != nil {
+		log.Printf("error validating consent token: %v", err)
+		http.Error(w, "invalid consent token", http.StatusBadRequest)
+		return
+	}
+
+	consentUserId, ok := consentClaims["user"].(string)
+	if !ok || consentUserId != userId {
+		log.Printf("user ID mismatch: expected %s, got %s", userId, consentUserId)
+		http.Error(w, "invalid consent token", http.StatusBadRequest)
+		return
+	}
+	consentClientId, ok := consentClaims["client_id"].(string)
+	if !ok || consentClientId != authorizeParams.ClientID {
+		log.Printf("client ID mismatch: expected %s, got %s", authorizeParams.ClientID, consentClientId)
+		http.Error(w, "invalid consent token", http.StatusBadRequest)
+		return
+	}
+	consentRedirectURI, ok := consentClaims["redirect_uri"].(string)
+	if !ok || consentRedirectURI != authorizeParams.RedirectURI {
+		log.Printf("redirect URI mismatch: expected %s, got %s", authorizeParams.RedirectURI, consentRedirectURI)
+		http.Error(w, "invalid consent token", http.StatusBadRequest)
+		return
+	}
+	consentScope, ok := consentClaims["scope"].(string)
+	if !ok || consentScope != authorizeParams.Scope {
+		log.Printf("scope mismatch: expected %s, got %s", authorizeParams.Scope, consentScope)
+		http.Error(w, "invalid consent token", http.StatusBadRequest)
+		return
+	}
+
 	code := store.PushAuthorization(userId, authorizeParams.ClientID, authorizeParams.RedirectURI, authorizeParams.Scope)
 	callbackQuery.Set("code", code)
 

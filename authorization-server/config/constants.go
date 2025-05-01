@@ -1,4 +1,4 @@
 package config
 
 const ACCESS_TOKEN_COOKIE_NAME = "access_token"
-const ACCESS_TOKEN_SECRET = "secret"
+const CONSENT_TOKEN_COOKIE_NAME = "consent_token"
