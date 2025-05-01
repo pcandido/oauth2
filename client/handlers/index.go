@@ -26,7 +26,7 @@ func IndexHandler(w http.ResponseWriter, r *http.Request) {
 	if err != nil {
 		html.WriteString(`<p>Welcome, to access the Resource Server, click <a href="/auth_server/initiate">here</a> to authorize.</p>`)
 	} else {
-		html.WriteString(`<p>Welcome, you are authorized to access the Resource Server.</p>`)
+		html.WriteString(`<p>Welcome, you are authorized to access the Resource Server. Click <a href="/auth_server/initiate">here</a> to authorize again.</p>`)
 		html.WriteString(getEventTable(tokens))
 	}
 
