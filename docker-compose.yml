@@ -11,13 +11,23 @@ services:
     networks:
       - default
 
-  authorization-client:
+  resource-server:
+    build: ./resource-server
+    environment:
+      - PORT=8082
+    ports:
+      - 8082:8082
+    networks:
+      - default
+
+  client:
     build: ./client
     environment:
       - PORT=8080
       - BASE_URL=http://localhost:8080
       - AUTHORIZATION_SERVER_HOST_BE=authorization-server:8081
       - AUTHORIZATION_SERVER_HOST_FE=localhost:8081
+      - RESOURCE_SERVER_HOST=resource-server:8082
     ports:
       - 8080:8080
     networks:
