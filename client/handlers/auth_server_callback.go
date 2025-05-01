@@ -18,6 +18,7 @@ type Tokens struct {
 
 func LoginCallbackHandler(w http.ResponseWriter, r *http.Request) {
 	callbackState := r.URL.Query().Get("state")
+	callbackError := r.URL.Query().Get("error")
 	code := r.URL.Query().Get("code")
 
 	// Check if the state is valid
@@ -34,11 +35,12 @@ func LoginCallbackHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	http.SetCookie(w, &http.Cookie{
-		Name:   config.AUTH_SERVER_STATE_COOKIE_NAME,
-		Value:  "",
-		MaxAge: -1,
-	})
+	// Check if there was an error in the callback
+	if callbackError != "" {
+		log.Printf("error: callback error: %s", callbackError)
+		http.Error(w, "the access to the resource is denied", http.StatusUnauthorized)
+		return
+	}
 
 	// Exchange the authorization code for an access token
 	tokenUrl := url.URL{
@@ -84,6 +86,12 @@ func LoginCallbackHandler(w http.ResponseWriter, r *http.Request) {
 		SameSite: http.SameSiteStrictMode,
 		HttpOnly: true,
 		// Use secure flag in production
+	})
+
+	http.SetCookie(w, &http.Cookie{
+		Name:   config.AUTH_SERVER_STATE_COOKIE_NAME,
+		Value:  "",
+		MaxAge: -1,
 	})
 
 	// Redirect to the main page
