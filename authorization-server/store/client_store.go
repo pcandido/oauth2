@@ -22,7 +22,7 @@ var clients = []Client{
 		RedirectURIs:         []string{"http://localhost:8080/auth_server/callback"},
 		GrantTypes:           []string{"authorization_code"},
 		ResponseTypes:        []string{"code"},
-		Scopes:               []string{"read", "write"},
+		Scopes:               []string{"read:events", "write:events"},
 		AccessTokenLifetime:  3600,
 		RefreshTokenLifetime: 7200,
 	},

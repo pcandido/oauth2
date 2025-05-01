@@ -6,6 +6,8 @@ import (
 	"net/http"
 	"resource-server/store"
 	"resource-server/token"
+	"slices"
+	"strings"
 )
 
 func ResourceHandler(w http.ResponseWriter, r *http.Request) {
@@ -35,6 +37,13 @@ func ResourceHandler(w http.ResponseWriter, r *http.Request) {
 	if !ok {
 		log.Printf("Claim 'sub' not found: %v", claims)
 		http.Error(w, "Invalid token claims", http.StatusUnauthorized)
+		return
+	}
+
+	scope, ok := claims["scope"].(string)
+	if !ok || !slices.Contains(strings.Split(scope, " "), "read:events") {
+		log.Printf("Insufficient scope: %s", scope)
+		http.Error(w, "Insufficient scope", http.StatusForbidden)
 		return
 	}
 

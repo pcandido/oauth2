@@ -31,7 +31,7 @@ func redirectUrl(state string) string {
 	query.Add("response_type", "code")
 	query.Add("client_id", config.CLIENT_ID)
 	query.Add("redirect_uri", fmt.Sprintf("%s/auth_server/callback", config.BaseUrl()))
-	query.Add("scope", "read write")
+	query.Add("scope", "read:events")
 	query.Add("state", state)
 
 	url := &url.URL{
