@@ -17,7 +17,7 @@ var clients = []Client{
 	{
 		ClientID:             "client_id",
 		ClientSecret:         "client_secret",
-		RedirectURIs:         []string{"http://localhost:8080/login/callback"},
+		RedirectURIs:         []string{"http://localhost:8080/auth_server/callback"},
 		GrantTypes:           []string{"authorization_code"},
 		ResponseTypes:        []string{"code"},
 		Scopes:               []string{"read", "write"},

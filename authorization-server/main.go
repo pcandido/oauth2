@@ -15,6 +15,6 @@ func main() {
 
 	port := os.Getenv("PORT")
 
-	log.Printf("Authorization Server running on http://localhost:%s/\n", port)
+	log.Printf("Authorization Server running on port %s", port)
 	http.ListenAndServe(fmt.Sprintf(":%s", port), nil)
 }

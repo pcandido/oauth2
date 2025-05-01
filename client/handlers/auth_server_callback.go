@@ -2,6 +2,7 @@ package handlers
 
 import (
 	"authorization-client/config"
+	"authorization-client/store"
 	"encoding/json"
 	"fmt"
 	"log"
@@ -49,7 +50,7 @@ func LoginCallbackHandler(w http.ResponseWriter, r *http.Request) {
 	tokenBody := url.Values{}
 	tokenBody.Set("grant_type", "authorization_code")
 	tokenBody.Set("code", code)
-	tokenBody.Set("redirect_uri", fmt.Sprintf("%s/login/callback", config.BaseUrl()))
+	tokenBody.Set("redirect_uri", fmt.Sprintf("%s/auth_server/callback", config.BaseUrl()))
 	tokenBody.Set("client_id", config.CLIENT_ID)
 	tokenBody.Set("client_secret", config.CLIENT_SECRET)
 
@@ -67,29 +68,22 @@ func LoginCallbackHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	var tokens Tokens
+	var tokens store.Tokens
 	if err := json.NewDecoder(res.Body).Decode(&tokens); err != nil {
 		log.Printf("error: failed to parse token response, error: %v", err)
 		http.Error(w, "error parsing token response", http.StatusInternalServerError)
 		return
 	}
 
-	// Store the tokens in cookies or server-side session/database
-	http.SetCookie(w, &http.Cookie{
-		Name:     config.AUTH_SERVER_ACCESS_TOKEN_COOKIE_NAME,
-		Value:    tokens.AccessToken,
-		SameSite: http.SameSiteStrictMode,
-		HttpOnly: true,
-		// Use secure flag in production
-	})
+	session := store.StoreToken(tokens)
 
 	http.SetCookie(w, &http.Cookie{
-		Name:     config.AUTH_SERVER_REFRESH_TOKEN_COOKIE_NAME,
-		Value:    tokens.RefreshToken,
+		Name:     config.SESSION_COOKIE_NAME,
+		Value:    session,
+		Path:     "/",
 		SameSite: http.SameSiteStrictMode,
 		HttpOnly: true,
 		// Use secure flag in production
-		// Set path to some specific path for security
 	})
 
 	// Redirect to the main page

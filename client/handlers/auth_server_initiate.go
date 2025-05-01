@@ -2,8 +2,7 @@ package handlers
 
 import (
 	"authorization-client/config"
-	"crypto/rand"
-	"encoding/hex"
+	"authorization-client/utils"
 	"fmt"
 	"net/http"
 	"net/url"
@@ -11,19 +10,10 @@ import (
 )
 
 func LoginInitiateHandler(w http.ResponseWriter, r *http.Request) {
-	state := generateRandomState(16)
+	state := utils.GenerateRandomString(16)
 
 	http.SetCookie(w, stateCookie(state))
 	http.Redirect(w, r, redirectUrl(state), http.StatusTemporaryRedirect)
-}
-
-func generateRandomState(length int) string {
-	bytes := make([]byte, length)
-	_, err := rand.Read(bytes)
-	if err != nil {
-		panic(err)
-	}
-	return hex.EncodeToString(bytes)
 }
 
 func stateCookie(state string) *http.Cookie {
@@ -40,7 +30,7 @@ func redirectUrl(state string) string {
 	query := url.Values{}
 	query.Add("response_type", "code")
 	query.Add("client_id", config.CLIENT_ID)
-	query.Add("redirect_uri", fmt.Sprintf("%s/login/callback", config.BaseUrl()))
+	query.Add("redirect_uri", fmt.Sprintf("%s/auth_server/callback", config.BaseUrl()))
 	query.Add("scope", "read write")
 	query.Add("state", state)
 
