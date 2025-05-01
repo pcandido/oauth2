@@ -10,9 +10,14 @@ type User struct {
 
 var users = []User{
 	{
-		ID:       "123",
-		Email:    "user@domain.com",
+		ID:       "user1",
+		Email:    "luke.skywalker@domain.com",
 		password: "123",
+	},
+	{
+		ID:       "user2",
+		Email:    "han.solo@domain.com",
+		password: "456",
 	},
 }
 
