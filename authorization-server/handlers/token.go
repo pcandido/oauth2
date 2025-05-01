@@ -4,6 +4,7 @@ import (
 	"authorization-server/store"
 	"authorization-server/token"
 	"encoding/json"
+	"log"
 	"net/http"
 	"time"
 )
@@ -17,12 +18,14 @@ type TokenResponse struct {
 
 func TokenHandler(w http.ResponseWriter, r *http.Request) {
 	if r.Method != http.MethodPost {
+		log.Printf("invalid request method: %s", r.Method)
 		http.Error(w, "invalid_request", http.StatusMethodNotAllowed)
 		return
 	}
 
 	err := r.ParseForm()
 	if err != nil {
+		log.Printf("error parsing form: %v", err)
 		http.Error(w, "invalid_request", http.StatusBadRequest)
 		return
 	}
@@ -33,42 +36,69 @@ func TokenHandler(w http.ResponseWriter, r *http.Request) {
 	clientID := r.FormValue("client_id")
 	clientSecret := r.FormValue("client_secret")
 
-	if grantType != "authorization_code" || code == "" || redirectURI == "" || clientID == "" {
-		http.Error(w, "invalid_request", http.StatusBadRequest)
+	if grantType != "authorization_code" {
+		log.Printf("invalid grant type: %s", grantType)
+		http.Error(w, "invalid_grant_type", http.StatusBadRequest)
 		return
 	}
 
-	authCode, err := store.GetCode(code, clientID, redirectURI)
+	if code == "" {
+		log.Printf("missing code")
+		http.Error(w, "invalid_code", http.StatusBadRequest)
+		return
+	}
+
+	authorization, err := store.PopAuthorization(code)
 	if err != nil {
-		http.Error(w, "invalid_grant", http.StatusBadRequest)
+		log.Printf("error getting authorization \"%s\": %v", code, err)
+		http.Error(w, "invalid_grant", http.StatusUnauthorized)
+		return
+	}
+
+	if authorization.ClientId != clientID {
+		log.Printf("client ID mismatch: expected %s, got %s", authorization.ClientId, clientID)
+		http.Error(w, "invalid_grant", http.StatusUnauthorized)
+		return
+	}
+
+	if authorization.RedirectUri != redirectURI {
+		log.Printf("redirect URI mismatch: expected %s, got %s", authorization.RedirectUri, redirectURI)
+		http.Error(w, "invalid_grant", http.StatusUnauthorized)
 		return
 	}
 
 	client, err := store.GetClient(clientID)
 	if err != nil {
-		http.Error(w, "invalid_client", http.StatusBadRequest)
+		log.Printf("error getting client \"%s\": %v", clientID, err)
+		http.Error(w, "invalid_client", http.StatusUnauthorized)
 		return
 	}
+
 	if client.ClientSecret != clientSecret {
-		http.Error(w, "invalid_client", http.StatusBadRequest)
+		log.Printf("client secret mismatch")
+		http.Error(w, "invalid_client", http.StatusUnauthorized)
 		return
 	}
 
-	user, err := store.GetUserById(authCode.UserId)
+	user, err := store.GetUserById(authorization.UserId)
 	if err != nil {
-		http.Error(w, err.Error(), http.StatusBadRequest)
+		log.Printf("error getting user \"%s\": %v", authorization.UserId, err)
+		http.Error(w, "invalid_user", http.StatusUnauthorized)
 		return
 	}
 
+	accessTokenExpiresIn := 15 * time.Minute
 	accessToken, err := token.Generate(map[string]any{
 		"sub":   user.ID,
 		"email": user.Email,
 		"iat":   time.Now().Unix(),
 		"aud":   clientID,
-		"scope": authCode.Scope,
-	}, 15*time.Minute)
+		"scope": authorization.Scope,
+	}, accessTokenExpiresIn)
+
 	if err != nil {
-		http.Error(w, "server_error", http.StatusInternalServerError)
+		log.Printf("error generating access token: %v", err)
+		http.Error(w, "internal_server_error", http.StatusInternalServerError)
 		return
 	}
 
@@ -77,8 +107,10 @@ func TokenHandler(w http.ResponseWriter, r *http.Request) {
 		"iat": time.Now().Unix(),
 		"aud": clientID,
 	}, 7*time.Hour*24)
+
 	if err != nil {
-		http.Error(w, "server_error", http.StatusInternalServerError)
+		log.Printf("error generating refresh token: %v", err)
+		http.Error(w, "internal_server_error", http.StatusInternalServerError)
 		return
 	}
 
@@ -86,7 +118,7 @@ func TokenHandler(w http.ResponseWriter, r *http.Request) {
 		AccessToken:  accessToken,
 		RefreshToken: refreshToken,
 		TokenType:    "Bearer",
-		ExpiresIn:    int((15 * time.Minute).Seconds()),
+		ExpiresIn:    int(accessTokenExpiresIn.Seconds()),
 	}
 
 	w.Header().Set("Content-Type", "application/json")

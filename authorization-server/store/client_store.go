@@ -13,8 +13,8 @@ type Client struct {
 	RefreshTokenLifetime int
 }
 
-var clients = map[string]Client{
-	"client_id_1": {
+var clients = []Client{
+	{
 		ClientID:             "client_id",
 		ClientSecret:         "client_secret",
 		RedirectURIs:         []string{"http://localhost:8080/login/callback"},
@@ -27,9 +27,10 @@ var clients = map[string]Client{
 }
 
 func GetClient(clientID string) (*Client, error) {
-	client, exists := clients[clientID]
-	if !exists {
-		return nil, fmt.Errorf("client not found")
+	for _, client := range clients {
+		if client.ClientID == clientID {
+			return &client, nil
+		}
 	}
-	return &client, nil
+	return nil, fmt.Errorf("client not found")
 }

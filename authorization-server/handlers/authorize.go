@@ -5,6 +5,7 @@ import (
 	"authorization-server/store"
 	"authorization-server/token"
 	"fmt"
+	"log"
 	"net/http"
 	"net/url"
 	"slices"
@@ -13,14 +14,26 @@ import (
 
 func AuthorizeHandler(w http.ResponseWriter, r *http.Request) {
 	authorizeParams := AuthorizeParamsFromQuery(r)
+
 	if err := validateClient(authorizeParams); err != nil {
-		http.Error(w, err.Error(), http.StatusBadRequest)
-		// TODO return errors to client
+		http.Error(w, err.Error(), http.StatusForbidden)
 		return
 	}
 
+	callbackUrl, err := url.Parse(authorizeParams.RedirectURI)
+	if err != nil {
+		http.Error(w, "invalid redirect_uri", http.StatusBadRequest)
+		return
+	}
+
+	callbackQuery := url.Values{}
+	callbackQuery.Set("state", authorizeParams.State)
+
 	if authorizeParams.Error != "" {
-		http.Error(w, authorizeParams.Error, http.StatusBadRequest)
+		callbackQuery.Set("error", authorizeParams.Error)
+		callbackUrl.RawQuery = callbackQuery.Encode()
+
+		http.Redirect(w, r, callbackUrl.String(), http.StatusTemporaryRedirect)
 		return
 	}
 
@@ -35,17 +48,8 @@ func AuthorizeHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	code := store.GenerateCode(userId, authorizeParams.ClientID, authorizeParams.RedirectURI, authorizeParams.Scope)
-
-	callbackQuery := url.Values{}
+	code := store.PushAuthorization(userId, authorizeParams.ClientID, authorizeParams.RedirectURI, authorizeParams.Scope)
 	callbackQuery.Set("code", code)
-	callbackQuery.Set("state", authorizeParams.State)
-
-	callbackUrl, err := url.Parse(authorizeParams.RedirectURI)
-	if err != nil {
-		http.Error(w, "invalid redirect_uri", http.StatusBadRequest)
-		return
-	}
 
 	callbackUrl.RawQuery = callbackQuery.Encode()
 	http.Redirect(w, r, callbackUrl.String(), http.StatusTemporaryRedirect)
@@ -61,34 +65,41 @@ func getUser(r *http.Request) (string, bool) {
 	if err != nil {
 		return "", false
 	}
+
 	userId, ok := claims["user"].(string)
 	if !ok {
 		return "", false
 	}
+
 	return userId, true
 }
 
 func validateClient(authorizeParams *AuthorizeParams) error {
 	client, err := store.GetClient(authorizeParams.ClientID)
 	if err != nil {
+		log.Printf("error getting client \"%s\": %v", authorizeParams.ClientID, err)
 		return fmt.Errorf("unauthorized_client")
 	}
 
 	if !slices.Contains(client.RedirectURIs, authorizeParams.RedirectURI) {
+		log.Printf("redirect URI mismatch: expected %s, got %s", client.RedirectURIs, authorizeParams.RedirectURI)
 		return fmt.Errorf("invalid_redirect_uri")
 	}
 
 	if !slices.Contains(client.ResponseTypes, authorizeParams.ResponseType) {
+		log.Printf("unsupported response type: expected %v, got %s", client.ResponseTypes, authorizeParams.ResponseType)
 		return fmt.Errorf("unsupported_response_type")
 	}
 
 	scopes := strings.Split(authorizeParams.Scope, " ")
 	if len(scopes) == 0 {
+		log.Printf("invalid scope: %s", authorizeParams.Scope)
 		return fmt.Errorf("invalid_scope")
 	}
 
 	for _, scope := range scopes {
 		if !slices.Contains(client.Scopes, scope) {
+			log.Printf("invalid scope. client options: %v, scope: %s", client.Scopes, scope)
 			return fmt.Errorf("invalid_scope")
 		}
 	}

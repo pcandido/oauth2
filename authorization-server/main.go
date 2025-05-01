@@ -3,6 +3,7 @@ package main
 import (
 	"authorization-server/handlers"
 	"fmt"
+	"log"
 	"net/http"
 	"os"
 )
@@ -14,6 +15,6 @@ func main() {
 
 	port := os.Getenv("PORT")
 
-	fmt.Printf("Authorization Server running on http://localhost:%s/\n", port)
+	log.Printf("Authorization Server running on http://localhost:%s/\n", port)
 	http.ListenAndServe(fmt.Sprintf(":%s", port), nil)
 }

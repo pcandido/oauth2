@@ -6,6 +6,7 @@ import (
 	"authorization-server/token"
 	"fmt"
 	"html"
+	"log"
 	"net/http"
 	"net/url"
 	"time"
@@ -21,6 +22,9 @@ func LoginHandler(w http.ResponseWriter, r *http.Request) {
 		login(w, r)
 		return
 	}
+
+	log.Printf("invalid request method: %s", r.Method)
+	http.Error(w, "Method Not Allowed", http.StatusMethodNotAllowed)
 }
 
 func loginForm(w http.ResponseWriter, r *http.Request) {
@@ -78,26 +82,27 @@ func login(w http.ResponseWriter, r *http.Request) {
 
 	token, err := token.Generate(map[string]any{"user": user.ID}, 15*time.Minute)
 	if err != nil {
-		authorizeParams.Error = "server_error"
+		authorizeParams.Error = "internal_server_error"
 		url := url.URL{
 			Path:     "/authorize",
 			RawQuery: authorizeParams.toQuery().Encode(),
 		}
-		http.Redirect(w, r, url.String(), http.StatusTemporaryRedirect)
+
+		http.Redirect(w, r, url.String(), http.StatusFound)
 		return
 	}
 
-	cookie := &http.Cookie{
-		Name:  config.ACCESS_TOKEN_COOKIE_NAME,
-		Value: token,
-		// Use Secure and HttpOnly flags for security in production
-	}
-	http.SetCookie(w, cookie)
+	http.SetCookie(w, &http.Cookie{
+		Name:     config.ACCESS_TOKEN_COOKIE_NAME,
+		Value:    token,
+		HttpOnly: true,
+		// Use secure flag in production
+	})
 
 	url := url.URL{
 		Path:     "/authorize",
 		RawQuery: authorizeParams.toQuery().Encode(),
 	}
 
-	http.Redirect(w, r, url.String(), http.StatusTemporaryRedirect)
+	http.Redirect(w, r, url.String(), http.StatusFound)
 }
