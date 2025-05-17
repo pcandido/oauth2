@@ -210,7 +210,7 @@ Access token validated, the resource can be delivered and the client can use it 
 
 ---
 
-## Next steps
+## 🚧 Next steps
 
 * Implement additional OAuth 2.0 flows, such as the refresh token flow, to enhance functionality and security.
 
